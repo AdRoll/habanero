@@ -1,0 +1,20 @@
+%% -*- erlang -*-
+{application, habanero,
+    [
+        {description, "A light weight loadtesting framework."},
+        {vsn, "1.0.0"},
+        {registered, []},
+        {applications, [
+            kernel,
+            stdlib,
+            inets,
+            ssl,
+            folsom,
+            cowboy,
+            lager
+        ]},
+        {mod, {habanero_app, []}},
+        {env, []}
+    ]}.
+
+

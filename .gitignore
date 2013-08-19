@@ -1,5 +1,11 @@
 .eunit
-deps
+deps/
+ebin/
+log/
 *.o
 *.beam
 *.plt
+.idea/
+*.iml
+.DS_Store
+*.swp
