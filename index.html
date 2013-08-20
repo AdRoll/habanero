@@ -1,51 +1,191 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Habanero by AdRoll</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Habanero : Load Testing framework in erlang with real-time feedback" />
 
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Habanero</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/AdRoll/Habanero">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/AdRoll/Habanero/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/AdRoll/Habanero/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
 
-    <div class="wrapper">
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/AdRoll/habanero">View on GitHub</a>
 
-      <section>
-        <div id="title">
-          <h1>Habanero</h1>
-          <p>Load Testing framework in erlang with real-time feedback</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/AdRoll">AdRoll</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h1 id="project_title">Habanero</h1>
+          <h2 id="project_tagline">Load Testing framework in erlang with real-time feedback</h2>
 
-        <h1>
-<a name="habanero" class="anchor" href="#habanero"><span class="octicon octicon-link"></span></a>Habanero</h1>
-
-<p>Load Testing framework in erlang with real-time feedback</p>
-      </section>
-
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/AdRoll/habanero/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/AdRoll/habanero/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="haba%C3%B1ero" class="anchor" href="#haba%C3%B1ero"><span class="octicon octicon-link"></span></a>habañero</h1>
+
+<p>Habanero is a lightweight, HTTP load testing tool written in Erlang.</p>
+
+<h2>
+<a name="quick-start" class="anchor" href="#quick-start"><span class="octicon octicon-link"></span></a>Quick start</h2>
+
+<p>Habanero requires Erlang R15B03 or higher. On OS X, Erlang is available via <a href="http://brew.sh/">Homebrew</a>.</p>
+
+<pre lang="shell"><code>brew install erlang
+</code></pre>
+
+<p>Once Erlang is installed, run make to compile habanero:</p>
+
+<pre lang="shell"><code>make
+</code></pre>
+
+<p>Habanero can be started in interactive mode:</p>
+
+<pre lang="shell"><code>./habanero.sh 
+</code></pre>
+
+<p>...or detached:</p>
+
+<pre lang="shell"><code>./habanero.sh -detached
+</code></pre>
+
+<p>By default, the habanero dashboard is available at <a href="http://0.0.0.0:5566">http://0.0.0.0:5566</a>.</p>
+
+<h2>
+<a name="configuring-tests" class="anchor" href="#configuring-tests"><span class="octicon octicon-link"></span></a>Configuring Tests</h2>
+
+<h3>
+<a name="pipelines" class="anchor" href="#pipelines"><span class="octicon octicon-link"></span></a>Pipelines</h3>
+
+<p>The core of habanero's execution model is the pipeline. This configurable in <em>habanero.config</em>.</p>
+
+<div class="highlight"><pre><span class="c">%% Sample pipeline executes a GET request on index.html on localhost.</span>
+<span class="p">{</span><span class="n">pipeline</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">{</span><span class="n">sample_get</span><span class="p">,</span> <span class="p">[</span>
+        <span class="c">%% Returns [Method, Url, Headers]</span>
+            <span class="p">{</span><span class="n">compose_request</span><span class="p">,</span> <span class="p">{</span>
+                <span class="n">return</span><span class="p">,</span> <span class="p">[</span>
+                    <span class="nb">get</span><span class="p">,</span>
+                    <span class="s">"http://localhost/index.html"</span><span class="p">,</span>
+                <span class="p">[{</span><span class="s">"User-Agent"</span><span class="p">,</span> <span class="s">"Habanero/1.0"</span><span class="p">}]</span>
+            <span class="p">]}</span>
+            <span class="p">},</span>
+        <span class="p">{</span><span class="n">transition</span><span class="p">,</span> <span class="p">{</span><span class="n">return</span><span class="p">,</span> <span class="n">sample_get</span><span class="p">}}</span>
+    <span class="p">]}</span>
+<span class="p">]}</span>
+
+</pre></div>
+
+<h4>
+<a name="stages" class="anchor" href="#stages"><span class="octicon octicon-link"></span></a>Stages</h4>
+
+<p>Pipelines are composed of one or more stages. You can imagine a pipeline as a directed graph where each node represents an HTTP request. The above example shows a simple pipeline with a single request.</p>
+
+<p>Each stage is comprised of two configurable phases: <em>compose request</em> and <em>transition</em>.</p>
+
+<h4>
+<a name="phases" class="anchor" href="#phases"><span class="octicon octicon-link"></span></a>Phases</h4>
+
+<p>Compose request defines the request parameters. This phase must return a list of one of two forms.</p>
+
+<p>An empty body request, e.g. GET or HEAD, in the form [Method, Url, Headers]:</p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="n">compose_request</span><span class="p">,</span> <span class="p">{</span>
+    <span class="n">return</span><span class="p">,</span> <span class="p">[</span><span class="nb">get</span><span class="p">,</span><span class="s">"http://localhost/index.html"</span><span class="p">,[{</span><span class="s">"User-Agent"</span><span class="p">,</span> <span class="s">"Habanero/1.0"</span><span class="p">}]]}</span>
+<span class="p">},</span>
+</pre></div>
+
+<p>Or a request with a provided body, in form [Method, Url, Headers, ContentType, Body]:</p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="n">compose_request</span><span class="p">,</span> <span class="p">{</span>
+    <span class="n">return</span><span class="p">,</span> <span class="p">[</span><span class="n">post</span><span class="p">,</span><span class="s">"http://localhost/newpost"</span><span class="p">,[{</span><span class="s">"User-Agent"</span><span class="p">,</span> <span class="s">"Habanero/1.0"</span><span class="p">}],</span> <span class="s">"text/plain"</span><span class="p">,</span> <span class="s">"foo=bar"</span><span class="p">]}</span>
+<span class="p">},</span>
+</pre></div>
+
+<p>Transition must return a single value specifying the next stage to execute:</p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="n">transition</span><span class="p">,</span> <span class="p">{</span><span class="n">return</span><span class="p">,</span> <span class="n">sample_get</span><span class="p">}}</span>
+</pre></div>
+
+<h3>
+<a name="running-tests" class="anchor" href="#running-tests"><span class="octicon octicon-link"></span></a>Running tests</h3>
+
+<p>Test runs can be pre-configured as a series of worker counts over time.</p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="n">timeline</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">{</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="p">{</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="p">{</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">},</span>
+    <span class="p">{</span><span class="mi">30</span><span class="p">,</span> <span class="mi">20</span><span class="p">}</span>
+<span class="p">]},</span>
+</pre></div>
+
+<p>The above example defines a 30 second test run. Points in the timeline are specified as tuples of {second, worker count}. Habanero will interpolate the worker values between points spawning or terminating workers as necessary.</p>
+
+<p>You can execute a pre-configured test run via <code>start_run()</code></p>
+
+<div class="highlight"><pre><span class="mi">1</span><span class="o">&gt;</span> <span class="nn">habanero_coordinator</span><span class="p">:</span><span class="nf">start_run</span><span class="p">().</span>
+<span class="n">ok</span>
+<span class="mi">2</span><span class="o">&gt;</span>
+</pre></div>
+
+<p>Test runs can be stopped prematurely via <code>stop_run()</code></p>
+
+<div class="highlight"><pre><span class="mi">1</span><span class="o">&gt;</span> <span class="nn">habanero_coordinator</span><span class="p">:</span><span class="nf">stop_run</span><span class="p">().</span>
+<span class="n">ok</span>
+<span class="mi">2</span><span class="o">&gt;</span>
+</pre></div>
+
+<p>Ad hoc test runs can also be excecuted from via the shell as follows, the arguement to <code>workers()</code> is the number of workers to spawn:</p>
+
+<div class="highlight"><pre><span class="mi">1</span><span class="o">&gt;</span> <span class="nn">habanero_coordinator</span><span class="p">:</span><span class="nf">workers</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span>
+<span class="n">ok</span>
+<span class="mi">2</span><span class="o">&gt;</span> <span class="mi">17</span><span class="p">:</span><span class="mi">41</span><span class="p">:</span><span class="mi">00</span><span class="p">.</span><span class="mi">507</span> <span class="p">[</span><span class="n">info</span><span class="p">]</span> <span class="nv">Spawned</span> <span class="n">worker</span> <span class="o">&lt;</span><span class="mi">0</span><span class="p">.</span><span class="mi">119</span><span class="p">.</span><span class="mi">0</span><span class="o">&gt;</span>
+</pre></div>
+
+<h2>
+<a name="web-endpoints" class="anchor" href="#web-endpoints"><span class="octicon octicon-link"></span></a>Web Endpoints</h2>
+
+<p>Habanero exposes the following web API endpoints:</p>
+
+<dl>
+<dt>/api/start</dt>
+  <dd>Start a test run.</dd>
+  
+  <dt>/api/stop</dt>
+  <dd>Stop a test run.</dd>
+  
+  <dt>/api/history</dt>
+  <dd>Fetch a JSON summary of past test runs.</dd>
+  
+  <dt>/api/poll</dt>
+  <dd>Fetch current telemetry data.</dd>
+
+  <dt>/api/load?id=RUN_ID</dt>
+  <dd>Fetch telemetry data for a past test run, RUN_ID is the timestamp of the prior run.</dd>
+</dl>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Habanero maintained by <a href="https://github.com/AdRoll">AdRoll</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
     
+
   </body>
 </html>
