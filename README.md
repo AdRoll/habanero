@@ -87,6 +87,42 @@ Transition must return a single value specifying the next stage to execute:
 {transition, {return, sample_get}}
 ```
 
+##### Erlang Support
+
+Phases can also execute Erlang functions using the form
+
+```erlang
+{
+    compose_request, {erlang, {my_module, my_function}}
+},
+```
+
+Erlang functions must accept a Context parameter, e.g.
+```erlang
+-module(my_module).
+
+-export([my_function/1]).
+
+my_function(Context) ->
+    [get, "http://localhost/index.html", [{"User-Agent", "Habanero"}]]
+```
+
+##### Javascript Support
+
+<b>To enable Javascript support, you must edit ```rebar.config``` and uncomment the erlang_js dependency.</b>
+
+
+```erlang
+{sample_get, [
+    {compose_request, {javascript, "function(context){
+                var method = 'get';
+                var url = 'http://localhost/index.html';
+                return [method, url, []];
+            };"}},
+    {transition, {return, sample_get}}
+]},
+```
+
 ### Running tests
 
 Test runs can be pre-configured as a series of worker counts over time.
