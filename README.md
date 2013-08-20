@@ -2,6 +2,8 @@
 
 Habanero is a lightweight, HTTP load testing tool written in Erlang.
 
+![A screenshot of the habanero dashboard](https://raw.github.com/AdRoll/habanero/master/dashboard.png "Habanero Dashboard")
+
 ## Quick start
 
 Habanero requires Erlang R15B03 or higher. On OS X, Erlang is available via [Homebrew](http://brew.sh/).
