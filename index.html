@@ -36,6 +36,8 @@
 
 <p>Habanero is a lightweight, HTTP load testing tool written in Erlang.</p>
 
+<p><img src="https://raw.github.com/AdRoll/habanero/master/dashboard.png" alt="A screenshot of the habanero dashboard" title="Habanero Dashboard"></p>
+
 <h2>
 <a name="quick-start" class="anchor" href="#quick-start"><span class="octicon octicon-link"></span></a>Quick start</h2>
 
@@ -115,6 +117,41 @@
 <p>Transition must return a single value specifying the next stage to execute:</p>
 
 <div class="highlight"><pre><span class="p">{</span><span class="n">transition</span><span class="p">,</span> <span class="p">{</span><span class="n">return</span><span class="p">,</span> <span class="n">sample_get</span><span class="p">}}</span>
+</pre></div>
+
+<h5>
+<a name="erlang-support" class="anchor" href="#erlang-support"><span class="octicon octicon-link"></span></a>Erlang Support</h5>
+
+<p>Phases can also execute Erlang functions using the form</p>
+
+<div class="highlight"><pre><span class="p">{</span>
+    <span class="n">compose_request</span><span class="p">,</span> <span class="p">{</span><span class="n">erlang</span><span class="p">,</span> <span class="p">{</span><span class="n">my_module</span><span class="p">,</span> <span class="n">my_function</span><span class="p">}}</span>
+<span class="p">},</span>
+</pre></div>
+
+<p>Erlang functions must accept a Context parameter, e.g.</p>
+
+<div class="highlight"><pre><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">my_module</span><span class="p">).</span>
+
+<span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">my_function</span><span class="o">/</span><span class="mi">1</span><span class="p">]).</span>
+
+<span class="nf">my_function</span><span class="p">(</span><span class="nv">Context</span><span class="p">)</span> <span class="o">-&gt;</span>
+    <span class="p">[</span><span class="nb">get</span><span class="p">,</span> <span class="s">"http://localhost/index.html"</span><span class="p">,</span> <span class="p">[{</span><span class="s">"User-Agent"</span><span class="p">,</span> <span class="s">"Habanero"</span><span class="p">}]]</span>
+</pre></div>
+
+<h5>
+<a name="javascript-support" class="anchor" href="#javascript-support"><span class="octicon octicon-link"></span></a>Javascript Support</h5>
+
+<p><b>To enable Javascript support, you must edit <code>rebar.config</code> and uncomment the erlang_js dependency.</b></p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="n">sample_get</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">{</span><span class="n">compose_request</span><span class="p">,</span> <span class="p">{</span><span class="n">javascript</span><span class="p">,</span> <span class="s">"function(context){</span>
+<span class="s">                var method = 'get';</span>
+<span class="s">                var url = 'http://localhost/index.html';</span>
+<span class="s">                return [method, url, []];</span>
+<span class="s">            };"</span><span class="p">}},</span>
+    <span class="p">{</span><span class="n">transition</span><span class="p">,</span> <span class="p">{</span><span class="n">return</span><span class="p">,</span> <span class="n">sample_get</span><span class="p">}}</span>
+<span class="p">]},</span>
 </pre></div>
 
 <h3>
