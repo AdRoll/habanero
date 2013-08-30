@@ -117,8 +117,8 @@ $.extend(Habanero, {
             chart: { renderTo: renderTo, zoomType: 'xy' },
             xAxis: { type: 'datetime' },
             yAxis: [
-                { title: { text: 'Response Time' }, labels: { format: '{value} ms' } },
-                { title: { text: 'Workers' }, opposite: true}
+                { title: { text: 'Response Time' }, labels: { format: '{value} ms' }, min: 0 },
+                { title: { text: 'Workers' }, opposite: true, min: 0}
             ],
             plotOptions: {
                 area: { marker: { enabled: false } },
