@@ -13,7 +13,7 @@ start(_StartType, _StartArgs) ->
         {ok, HttpOptions} ->
             httpc:set_options(HttpOptions);
         _ ->
-            lager:warn("http_options undefined, using defaults!")
+            lager:warning("http_options undefined, using defaults!")
     end,
 
     % Compile cowboy routes
