@@ -256,7 +256,8 @@ $.extend(Habanero, {
         $.each(Habanero.charts, function () {
             $.each(this.series, function () {
                 if (this.options.hasOwnProperty('habaneroSrc')) {
-                    this.setData(Habanero.data.map(Habanero.simpleSeries, this));
+                    this.setData(Habanero.data.map(Habanero.simpleSeries, this).
+                            sort(function(a,b){return a[0].getTime()-b[0].getTime();}));
                 }
             });
             this.redraw();
