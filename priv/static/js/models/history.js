@@ -1,7 +1,9 @@
 var attr = DS.attr;
 
 Habanero.History = DS.Model.extend({
-    date: attr(),
+    date: function () {
+        return new Date(parseInt(this.get('id')) * 1000);
+    }.property('id'),
     duration: attr(),
     source: attr(),
     target: attr()
@@ -9,22 +11,19 @@ Habanero.History = DS.Model.extend({
 
 Habanero.History.FIXTURES = [
     {
-        id: 1,
-        date: "1379464272",
+        id: "1379464272",
         duration: 330,
         source: "",
         target: ""
     },
     {
-        id: 2,
-        date: "1379463928",
+        id: "1379463928",
         duration: 330,
         source: "",
         target: ""
     },
     {
-        id: 3,
-        date: "1379463301",
+        id: "1379463301",
         duration: 330,
         source: "",
         target: ""

@@ -16,6 +16,7 @@
             <h1>Habañero Dashboard</h1>
         </div>
 
+
         <h2>Past Runs</h2>
         <table id="past-runs" class="table table-condensed table-hover">
             <thead>
@@ -28,15 +29,13 @@
             </tr>
             </thead>
             <tbody>
-            {{#each}}
+            {{#each h in history}}
             <tr>
-                <td>{{date}}</td>
-                <td>{{duration}} seconds</td>
-                <td>{{source}}</td>
-                <td>{{target}}</td>
-                <td>
-                    <button data-date="{{date}}" class="btn btn-primary btn-mini">load</button>
-                </td>
+                <td>{{h.date}}</td>
+                <td>{{h.duration}} seconds</td>
+                <td>{{h.source}}</td>
+                <td>{{h.target}}</td>
+                <td>{{#link-to 'history' h}}{{h.id}}{{/link-to}}</td>
             </tr>
             {{/each}}
             </tbody>

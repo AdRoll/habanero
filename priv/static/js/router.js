@@ -1,10 +1,10 @@
 Habanero.Router.map(function () {
     this.resource('habanero', { path: '/' });
-    this.resource('past');
+    this.resource('history', { path: '/history/:id' });
 });
 
 Habanero.HabaneroRoute = Ember.Route.extend({
     model: function () {
-        return this.store.find('history');
+        return {history: this.store.find('history')};
     }
 });
