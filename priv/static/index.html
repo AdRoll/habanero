@@ -4,93 +4,58 @@
     <meta charset="utf-8">
     <title>Habañero Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap -->
-    <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href='http://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
-    <style>
-        h1 {
-            font-family: 'Lobster', cursive; /* Ubiquitous Lobster*/
-        }
-    </style>
-    <script id="past-run-template" type="text/x-handlebars-template">
-        {{#each history}}
-        <tr>
-            <td>{{dateFormat date}}</td>
-            <td>{{duration}} seconds</td>
-            <td>{{source}}</td>
-            <td>{{target}}</td>
-            <td>
-                <button data-date="{{date}}" class="btn btn-primary btn-mini">load</button>
-            </td>
-        </tr>
-        {{/each}}
-    </script>
-    <script id="stage-graphs-template" type="text/x-handlebars-template">
-        {{#each stages}}
-        <div class="row">
-            <div class="span4">
-                <div id="{{this}}-send_request-percentiles">test</div>
-            </div>
-            <div class="span4">
-                <div id="{{this}}-wait-percentiles">test</div>
-            </div>
-            <div class="span4">
-                <div id="{{this}}-process_response-percentiles">test</div>
-            </div>
-        </div>
-        {{/each}}
-    </script>
-    <script id="stage-select-template" type="text/x-handlebars-template">
-        {{#each stages}}
-        <li><a onclick="Habanero.selectStage('{{this}}')">{{this}}</a></li>
-        {{/each}}
-    </script>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/css/habanero.css" rel="stylesheet" media="screen">
 </head>
 <body>
 <div class="container">
     <div class="page-header">
         <h1>Habañero Dashboard</h1>
     </div>
-    <div class="row" id="main-graphs">
-        <div class="span8">
-            <div id="main-graph"></div>
-        </div>
-        <div class="span4">
-            <div id="queries-per-second"></div>
-        </div>
+
+    <div class="dropdown">
+        <a class="dropdown-toggle" id="dLabel" role="button" data-toggle="dropdown" data-target="#">
+            Actions <b class="caret"></b> </a>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            <li><a href="#startPoll">Start Polling</a></li>
+            <li><a href="#stopPoll">Pause Polling</a></li>
+            <li class="divider"></li>
+            <li><a href="#start">Start Test Run</a></li>
+            <li><a href="#stop">Stop Test Run</a></li>
+        </ul>
     </div>
-    <div class="btn-toolbar">
-        <div class="btn-group">
-            <div class="btn-group">
-                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                    Stage
-                    <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu" id="stages-dropdown">
-                    <!-- dropdown menu links -->
-                </ul>
-            </div>
-            <a class="btn" href="#" id="start-run">Start Run</a>
-            <a class="btn" href="#" id="stop-run">Stop Run</a>
-        </div>
-    </div>
-    <!--<div id="stage-percentiles"></div>-->
-    <h2>Past Runs</h2>
-    <table id="past-runs" class="table table-condensed table-hover">
+
+    <div id="response-time-percentiles"></div>
+    <div id="queries-per-second"></div>
+
+    <div id="history-container"></div>
+</div>
+</body>
+
+<script id="history" type="text/x-handlebars-template">
+    <h2>History</h2>
+    <table class="table table-condensed table-hover">
         <thead>
         <tr>
             <th>Date</th>
             <th>Duration</th>
-            <th>Source</th>
-            <th>Target</th>
             <th>Action</th>
         </tr>
         </thead>
         <tbody>
+        {{#each history}}
+        <tr>
+            <td>{{dateFormat date}}</td>
+            <td>{{duration}} seconds</td>
+            <td>
+                <a href="#load/{{date}}">load</a>
+            </td>
+        </tr>
+        {{/each}}
         </tbody>
     </table>
-</div>
-</body>
+</script>
 
 <script src="/js/jquery-1.10.2.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
@@ -99,326 +64,206 @@
 <script src="/js/highcharts-more.js"></script>
 
 <script type="text/javascript">
-
-var Habanero = Habanero || {};
-$.extend(Habanero, {
-
-    mainGraphDataSrc: 'global_wait',
-
-    mode: "live",
-
-    data: [],
-
-    charts: [],
-
-    percentilesGraph: function (title, renderTo, seriesSrc) {
-        return {
-            title: { text: title },
-            chart: { renderTo: renderTo, zoomType: 'xy' },
-            xAxis: { type: 'datetime' },
-            yAxis: [
-                { title: { text: 'Response Time' }, labels: { format: '{value} ms' }, min: 0 },
-                { title: { text: 'Workers' }, opposite: true, min: 0}
-            ],
-            plotOptions: {
-                area: { marker: { enabled: false } },
-                spline: { marker: { enabled: false } }
-            },
-            series: [
-                {
-                    name: 'Count',
-                    type: 'area',
-                    yAxis: 1,
-                    dashStyle: 'dash',
-                    fillOpacity: 0.1,
-                    habaneroSrc: ['worker_count'],
-                    data: []
-                },
-                {
-                    name: '50',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '50'],
-                    data: []
-                },
-                {
-                    name: '75',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '75'],
-                    data: []
-                },
-                {
-                    name: '90',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '90'],
-                    data: []
-                },
-                {
-                    name: '95',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '95'],
-                    data: []
-                },
-                {
-                    name: '99',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '99'],
-                    data: []
-                },
-                {
-                    name: '999',
-                    type: 'spline',
-                    habaneroSrc: [seriesSrc, 'percentile', '999'],
-                    data: []
-                }
-            ]
-        };
-    },
-
-    queriesPerSecondGauge: function (title, renderTo) {
-        return {
-            chart: {
-                renderTo: renderTo,
-                type: 'gauge'
-            },
-            title: {
-                text: 'Queries per Second'
-            },
-            pane: {
-                startAngle: -150,
-                endAngle: 150
-            },
-            yAxis: [
-                {
-                    min: 0,
-                    max: 200,
-                    lineColor: '#339',
-                    tickColor: '#339',
-                    minorTickColor: '#339',
-                    lineWidth: 2,
-                    labels: {
-                        distance: -20,
-                        rotation: 'auto'
-                    },
-                    tickLength: 5,
-                    minorTickLength: 5,
-                    endOnTick: false
-                }
-            ],
-            series: [
-                { data: [0] }
-            ]
-        };
-    },
-
-    round: function (n, d) {
-        return Math.round(n * Math.pow(10.0, 2)) / Math.pow(10.0, d);
-    },
-
-    qpsValue: function (d) {
-        var data = d['snapshot']
-        var qps = 0;
-
-        try {
-            var queriesPerWorker = Math.pow(10, 3) / data['global_wait']['arithmetic_mean'];
-            var numWorkers = data['worker_count']
-            qps = Habanero.round(numWorkers * queriesPerWorker, 2);
-        }
-        catch (e) {
-            //console.log(e)
-        }
-        return qps;
-    },
-
-    /**
-     * Returns a [date, time] point for a simple series given a data snapshot, i.e.
-     * a response from /api/poll. Assumes 'this' is a series object with the custom
-     * attribute 'habaneroSrc'; this attribute must be an array of properties defining
-     * the source of the series data, e.g.  ['global_wait','percentiles', '99']
-     */
-    simpleSeries: function (d) {
-        var date = new Date(parseInt(d['timestamp']) * 1000);
-        var value = 0;
-        try {
-            value = this.options['habaneroSrc'].reduce(function (o, p) {
-                return o[p];
-            }, d['snapshot']);
-        }
-        catch (e) {
-            //console.log(e)
-        }
-        return [date, value];
-    },
-
-    /** Bulk loads chart data. */
-    load: function () {
-        if (Habanero.data.length > 0)
-            Habanero.updateStageDropdown(Habanero.data[0], true);
-        $.each(Habanero.charts, function () {
-            $.each(this.series, function () {
-                if (this.options.hasOwnProperty('habaneroSrc')) {
-                    this.setData(Habanero.data.map(Habanero.simpleSeries, this).
-                            sort(function(a,b){return a[0].getTime()-b[0].getTime();}));
-                }
-            });
-            this.redraw();
-        });
-    },
-
-    /** Polls the Habanero server API and updates the charts with the new data. */
-    poll: function () {
-        $.getJSON(document.location.href + 'api/poll').done(function (data) {
-            Habanero.updateStageDropdown(data, false);
+    var Habanero = Habanero || {};
+    $.extend(Habanero, {
+        onDataUpdate: function (data) {
+            Habanero.charts = Habanero.charts || [];
             $.each(Habanero.charts, function () {
                 $.each(this.series, function () {
-                    if (this.options.hasOwnProperty('habaneroSrc')) {
-                        this.addPoint(Habanero.simpleSeries.call(this, data), false);
-                    } else {
-                        var value = Habanero.qpsValue.call(this, data);
-                        this.setData([value], false);
-
-                        // Rescale the gauge.
-                        var max = Math.pow(10, Math.floor(Math.log(value) / Math.LN10) + 1);
-                        if (this.chart.yAxis[0].max != max) {
-                            this.chart.yAxis[0].setExtremes(0, max);
-                        }
-                    }
+                    var series = this;
+                    $.each(data.map(this.options.mapper, this), function () {
+                        series.addPoint(this, false);
+                    });
                 });
                 this.redraw();
             });
-        });
-    },
+        },
 
-    startPoll: function () {
-        Habanero.setMode("live")
-        Habanero.stagesDirty = true;
-        Habanero.updateMainGraphs();
-        Habanero.pollIntervalId = setInterval(Habanero.poll, 1000);
-    },
-
-    stopPoll: function () {
-        if (Habanero.pollIntervalId)
-            clearInterval(Habanero.pollIntervalId)
-    },
-
-    addGraph: function (generator, title, el, source) {
-        Habanero.charts.push(new Highcharts.Chart(generator(title, el, source)));
-    },
-
-
-    dateFormat: function (context, block) {
-        return new Date(parseInt(context) * 1000).toUTCString();
-    },
-
-    updateMainGraphs: function () {
-        $('#main-graphs').slideUp();
-        if (Habanero.mode == "live") {
-            $('#main-graph').parent().removeClass('span12').addClass('span8');
-            $('#queries-per-second').parent().show();
-        } else {
-            $('#main-graph').parent().removeClass('span8').addClass('span12');
-            $('#queries-per-second').parent().hide();
-        }
-        Habanero.initializeCharts()
-        $('#main-graphs').slideDown();
-    },
-
-    initializeCharts: function () {
-        $.each(Habanero.charts, function () {
-            this.destroy();
-        });
-        Habanero.charts = [];
-        // Create the charts.
-        Habanero.addGraph(Habanero.percentilesGraph, "Wait (" + Habanero.mainGraphDataSrc + ")", "main-graph", Habanero.mainGraphDataSrc);
-        if (Habanero.mode == "live") {
-            Habanero.addGraph(Habanero.queriesPerSecondGauge, "QPS", "queries-per-second");
-        }
-    },
-
-    selectStage: function (stage) {
-        Habanero.setGraphSource(stage);
-        Habanero.updateMainGraphs();
-        Habanero.load();
-    },
-
-    setGraphSource: function (stage) {
-        Habanero.mainGraphDataSrc = stage + "_wait";
-    },
-
-    setMode: function (mode) {
-        Habanero.mode = mode;
-    },
-
-    updateStageDropdown: function (data, forceUpdate) {
-        if (Habanero.stagesDirty || forceUpdate) {
-            $('#stages-dropdown').empty();
-            $('#stages-dropdown').append(Habanero.stageSelectTemplate(data));
-            Habanero.stagesDirty = false;
-        }
-    },
-
-    /** Creates all charts, initializes some Handlebar.js stuff, loads the past runs. */
-    initialize: function () {
-
-        $('#start-run').click(function (event) {
-            event.preventDefault();
-            Habanero.startPoll();
-            $.get(document.location.href + "api/start");
-        });
-
-        $('#stop-run').click(function (event) {
-            event.preventDefault();
-            $.get(document.location.href + "api/stop");
-        });
-
-        // Handlebar.js
-        Handlebars.registerHelper('dateFormat', Habanero.dateFormat);
-
-        // Handlebar.js TODO - precompile this stuff
-        Habanero.pastRunsTemplate = Handlebars.compile($("#past-run-template").html());
-        Habanero.stageGraphsTemplate = Handlebars.compile($("#stage-graphs-template").html());
-        Habanero.stageSelectTemplate = Handlebars.compile($("#stage-select-template").html());
-
-        // TODO - is this useful?
-//        $.getJSON(document.location.href + 'api/poll').done(function (data) {
-//            $("#stage-percentiles").append(stageGraphsTemplate(data));
-//            $.each(data['stages'], function () {
-//                Habanero.addGraph(
-//                        "Compose Request(" + this + ")",
-//                        this + "-send_request-percentiles",
-//                        this + "_send_request");
-//                Habanero.addGraph(
-//                        "Wait(" + this + ")",
-//                        this + "-wait-percentiles",
-//                        this + "_wait");
-//                Habanero.addGraph(
-//                        "Process response(" + this + ")",
-//                        this + "-process_response-percentiles",
-//                        this + "_process_response");
-//            });
-//        });
-
-        // Load past runs.
-        $.getJSON(document.location.href + "api/history").done(function (data) {
-            $("#past-runs tbody").append(Habanero.pastRunsTemplate(data));
-            $("button").click(function (event) {
-                event.preventDefault();
-                $.getJSON(document.location.href + "api/load?id=" + $(this).data('date')).done(function (data) {
-                    Habanero.stopPoll();
-                    Habanero.setMode("historical");
-                    Habanero.setGraphSource("global");
-                    Habanero.updateMainGraphs();
-                    Habanero.data = data;
-                    Habanero.load();
+        clear: function () {
+            Habanero.charts = Habanero.charts || [];
+            $.each(Habanero.charts, function () {
+                $.each(this.series, function () {
+                    this.setData([]);
                 });
             });
-        });
-    }
-});
+        },
 
-$(document).ready(function () {
-    Habanero.initialize();
-    Habanero.startPoll();
-});
+        poll: function () {
+            $.getJSON('/api/poll').done(function (data) {
+                Habanero.onDataUpdate([data]);
+            });
+        },
 
+        load: function (id) {
+            Habanero.stopPoll();
+            Habanero.clear();
+            $.getJSON("/api/load?id=" + id).done(function (data) {
+                Habanero.onDataUpdate(Habanero.sortRaw(data));
+            });
+        },
+
+        round: function (n, d) {
+            return Math.round(n * Math.pow(10.0, 2)) / Math.pow(10.0, d);
+        },
+
+        getTime: function (d) {
+            return parseInt(d['timestamp']) * 1000;
+        },
+
+        sortRaw: function (data) {
+            return data.sort(function (a, b) {
+                return Habanero.getTime(a) - Habanero.getTime(b);
+            })
+        },
+
+        startRun: function () {
+            Habanero.clear();
+            Habanero.startPoll();
+            $.get('/api/start');
+        },
+
+        stopRun: function () {
+            $.get('/api/stop');
+        },
+
+        startPoll: function () {
+            Habanero.pollIntervalId = setInterval(Habanero.poll, 1000);
+        },
+
+        stopPoll: function () {
+            if (Habanero.pollIntervalId)
+                clearInterval(Habanero.pollIntervalId)
+        },
+
+        route: function () {
+            var hash = window.location.hash
+            if (hash.length > 0) {
+                var pathTokens = hash.substring(1).split("/");
+                $.each(Habanero.routes, function (i, route) {
+                    if (route.path == pathTokens[0]) {
+                        route.fun.apply(Habanero, pathTokens.slice(1));
+                        return true;
+                    }
+                });
+            }
+        },
+
+        addRoute: function (path, fun) {
+            Habanero.routes = Habanero.routes || [];
+            Habanero.routes.push({path: path, fun: fun});
+        },
+
+        addChart: function (chartOptions) {
+            Habanero.charts = Habanero.charts || [];
+            Habanero.charts.push(new Highcharts.Chart(chartOptions));
+        },
+
+        getProperty: function (property, context) {
+            var properties = property.split(".");
+            try {
+                return properties.reduce(function (context, prop) {
+                    return context[prop];
+                }, context);
+            } catch (e) {
+                return 0;
+            }
+        },
+
+        qpsMapper: function (data) {
+            var qps = 0;
+            try {
+                var queriesPerWorkerPerSecond = Math.pow(10, 3) / Habanero.getProperty("snapshot.global_wait.arithmetic_mean", data);
+                var numWorkers = Habanero.getProperty("snapshot.worker_count", data);
+                qps = Habanero.round(numWorkers * queriesPerWorkerPerSecond, 2);
+            }
+            catch (e) {
+                console.log(e)
+            }
+
+            if (isNaN(qps)) {
+                qps = 0;
+            } else if (!isFinite(qps)) {
+                qps = 0;
+            }
+
+            return [Habanero.getTime(data), qps];
+        },
+
+        propertyMapper: function (property) {
+            return function (data) {
+                return [Habanero.getTime(data), Habanero.getProperty(property, data)];
+            };
+        },
+
+        initialize: function () {
+            Handlebars.registerHelper('dateFormat', function (context, block) {
+                return new Date(parseInt(context) * 1000).toUTCString();
+            });
+
+            $.getJSON("/api/history").done(function (data) {
+                var template = Handlebars.compile($("#history").html());
+                $("#history-container").append(template(data));
+            });
+
+            Habanero.addRoute('load', Habanero.load);
+            Habanero.addRoute('start', Habanero.startRun);
+            Habanero.addRoute('stop', Habanero.stopRun);
+            Habanero.addRoute('startPoll', Habanero.startPoll);
+            Habanero.addRoute('stopPoll', Habanero.stopPoll);
+
+            $(window).on("hashchange", Habanero.route);
+
+            Habanero.route();
+
+            Habanero.addChart({
+                title: { text: "Response Time Percentiles" },
+                chart: { renderTo: 'response-time-percentiles', zoomType: 'xy' },
+                xAxis: { type: 'datetime', dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S'
+                }, showLastLabel: true },
+                yAxis: [
+                    { title: { text: 'Response Time' }, labels: { format: '{value} ms' }, min: 0 },
+                    { title: { text: 'Workers' }, opposite: true, min: 0}
+                ],
+                plotOptions: {
+                    area: { marker: { enabled: false } },
+                    spline: { marker: { enabled: false } }
+                },
+                series: [
+                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
+                    { name: '50', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.50") },
+                    { name: '75', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.75")},
+                    { name: '90', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.90")},
+                    { name: '95', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.95")},
+                    { name: '99', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.99")},
+                    { name: '999', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_wait.percentile.999")}
+                ]
+            });
+
+            Habanero.addChart({
+                title: { text: "Queries Per Second" },
+                chart: { renderTo: 'queries-per-second', zoomType: 'xy' },
+                xAxis: { type: 'datetime', dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S'
+                }, showLastLabel: true },
+                yAxis: [
+                    { title: { text: 'QPS' }, min: 0 },
+                    { title: { text: 'Workers' }, opposite: true, min: 0}
+                ],
+                plotOptions: {
+                    area: { marker: { enabled: false } },
+                    spline: { marker: { enabled: false } }
+                },
+                series: [
+                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
+                    { name: 'QPS', type: 'spline', data: [], mapper: Habanero.qpsMapper}
+                ]
+            });
+        }
+    });
+
+    $(function () {
+        Habanero.initialize();
+    });
 </script>
 </html>
