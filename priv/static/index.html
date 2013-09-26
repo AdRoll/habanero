@@ -192,6 +192,20 @@
             return [Habanero.getTime(data), qps];
         },
 
+        bruteForceQpsMapper: function (data) {
+            var qps = 0;
+
+            try {
+                qps = Math.round(Habanero.getProperty("snapshot.global_brute_force_qps.n", data) * Habanero.getProperty("snapshot.global_brute_force_qps.arithmetic_mean", data) / 10);
+                console.log("Brute force qps = " + qps);
+            }
+            catch (e) {
+                console.log(e);
+            }
+
+            return [Habanero.getTime(data), qps];
+        },
+
         propertyMapper: function (property) {
             return function (data) {
                 return [Habanero.getTime(data), Habanero.getProperty(property, data)];
@@ -279,7 +293,7 @@
                 },
                 series: [
                     { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
-                    { name: 'BFQPS', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_brute_force_qps")}
+                    { name: 'BFQPS', type: 'spline', data: [], mapper: Habanero.bruteForceQpsMapper}
                 ]
             });
 

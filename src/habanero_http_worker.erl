@@ -62,7 +62,7 @@ start_link(Pipeline) ->
     folsom_metrics:new_histogram(global_qps, slide, 1),
 
     % and we'll also try measuring qps ourselves
-    folsom_metrics:new_gauge(global_brute_force_qps),
+    folsom_metrics:new_histogram(global_brute_force_qps, slide, 10),
 
     initialize_histograms(State),
 
@@ -114,7 +114,7 @@ loop(transition, State = #state{query_count=QC, last_qps_measure=LastQPSMeasure}
     % periodically measure brute force qps
     Now = pytime(),
     State1 = case Now - LastQPSMeasure of
-                 QPSWindow when QPSWindow >= 10 ->
+                 QPSWindow when QPSWindow >= 1 ->
                      BruteForceQPS = trunc(QC+1 / QPSWindow),
                      folsom_metrics:notify({global_brute_force_qps, BruteForceQPS}),
                      State#state{
