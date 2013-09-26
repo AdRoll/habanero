@@ -111,31 +111,34 @@ loop(transition, State = #state{query_count=QC, last_qps_measure=LastQPSMeasure}
     folsom_metrics:notify({global_qpm, 1}),
     folsom_metrics:notify({global_qps, 1}),
 
+    % periodically measure brute force qps
+    Now = pytime(),
+    State1 = case Now - LastQPSMeasure of
+                 QPSWindow when QPSWindow >= 10 ->
+                     BruteForceQPS = trunc(QC+1 / QPSWindow),
+                     folsom_metrics:notify({global_brute_force_qps, BruteForceQPS}),
+                     State#state{
+                         query_count = 0,
+                         last_qps_measure = Now
+                     };
+                 _ ->
+                     State#state{
+                         query_count = QC+1
+                     }
+             end,
+
     % Get next stage
-    NextStage = to_atom(transition(State)),
+    NextStage = to_atom(transition(State1)),
+
     % Update telemetry data
-    State1 = notify_async(?INTERVALS, timestamp(?EVT_LOOP_END, State)),
-    State2 = State1#state{
+    State2 = notify_async(?INTERVALS, timestamp(?EVT_LOOP_END, State1)),
+    State3 = State2#state{
         current_stage = NextStage,
         timestamps = #timestamps{}
     },
 
     % Loop
-    Now = pytime(),
-    loop(
-        case Now - LastQPSMeasure of
-            QPSWindow when QPSWindow >= 10 ->
-                folsom_metrics:notify({global_brute_force_qps, trunc(QC+1 / QPSWindow)}),
-                State2#state{
-                    query_count = 0,
-                    last_qps_measure = pytime()
-                };
-            _ ->
-                State2#state{
-                    query_count = QC+1
-                }
-        end
-    ).
+    loop(State3).
 
 to_atom(Value) when erlang:is_atom(Value) ->
     Value;
