@@ -23,7 +23,10 @@
     pipeline :: pipeline(),
     current_stage :: stage_definition(),
     timestamps = #timestamps{} :: #timestamps{},
-    context = [] :: [{atom, list()}]
+    context = [] :: [{atom, list()}],
+
+    query_count = 0,
+    last_qps_measure
 }).
 
 % Lifecycle events
@@ -48,7 +51,8 @@ start_link([]) ->
 start_link(Pipeline) ->
     State = #state{
         pipeline = Pipeline,
-        current_stage = stage_id(hd(Pipeline))
+        current_stage = stage_id(hd(Pipeline)),
+        last_qps_measure = pytime()
     },
 
     % we keep a global spiral tracking overall requests per minute
@@ -56,6 +60,9 @@ start_link(Pipeline) ->
 
     % similarly keep a global sliding histogram tracking overall qps
     folsom_metrics:new_histogram(global_qps, slide, 1),
+
+    % and we'll also try measuring qps ourselves
+    folsom_metrics:new_gauge(global_brute_force_qps),
 
     initialize_histograms(State),
 
@@ -99,7 +106,7 @@ loop(wait, #state{current_stage = Stage} = State) ->
             State0 = timestamp(?EVT_RECEIVED_HEADERS, context_store(State, headers, [])),
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State0, body, <<"">>)))
     end;
-loop(transition, State) ->
+loop(transition, State = #state{query_count=QC, last_qps_measure=LastQPSMeasure}) ->
     % record the global request count stats
     folsom_metrics:notify({global_qpm, 1}),
     folsom_metrics:notify({global_qps, 1}),
@@ -108,11 +115,27 @@ loop(transition, State) ->
     NextStage = to_atom(transition(State)),
     % Update telemetry data
     State1 = notify_async(?INTERVALS, timestamp(?EVT_LOOP_END, State)),
-    % Loop
-    loop(State1#state{
+    State2 = State1#state{
         current_stage = NextStage,
         timestamps = #timestamps{}
-    }).
+    },
+
+    % Loop
+    Now = pytime(),
+    loop(
+        case Now - LastQPSMeasure of
+            QPSWindow when QPSWindow >= 10 ->
+                folsom_metrics:notify({global_brute_force_qps, trunc(QC+1 / QPSWindow)}),
+                State2#state{
+                    query_count = 0,
+                    last_qps_measure = pytime()
+                };
+            _ ->
+                State2#state{
+                    query_count = QC+1
+                }
+        end
+    ).
 
 to_atom(Value) when erlang:is_atom(Value) ->
     Value;
@@ -252,3 +275,9 @@ context_store(#state{context = C0, current_stage = CurrentStage} = State, Key, V
 
 context_value(#state{context = C0, current_stage = CurrentStage} = State, Key) ->
     proplists:get_value(Key, proplists:get_value(CurrentStage, C0, [])).
+
+
+pytime() ->
+    pytime(os:timestamp()).
+pytime({MegaSecs, Secs, MicroSecs}) ->
+    (1.0e+6 * MegaSecs) + Secs + (1.0e-6 * MicroSecs).

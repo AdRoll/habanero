@@ -29,6 +29,7 @@
     <div id="response-time-percentiles"></div>
     <div id="queries-per-second"></div>
     <div id="true-queries-per-second"></div>
+    <div id="brute-force-queries-per-second"></div>
     <div id="true-queries-per-minute"></div>
 
     <div id="history-container"></div>
@@ -259,6 +260,26 @@
                 series: [
                     { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
                     { name: 'QPS', type: 'spline', data: [], mapper: Habanero.qpsMapper}
+                ]
+            });
+
+            Habanero.addChart({
+                title: { text: "Brute Force Queries Per Second" },
+                chart: { renderTo: 'brute-force-queries-per-second', zoomType: 'xy' },
+                xAxis: { type: 'datetime', dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S'
+                }, showLastLabel: true },
+                yAxis: [
+                    { title: { text: 'BFQPS' }, min: 0 },
+                    { title: { text: 'Workers' }, opposite: true, min: 0}
+                ],
+                plotOptions: {
+                    area: { marker: { enabled: false } },
+                    spline: { marker: { enabled: false } }
+                },
+                series: [
+                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
+                    { name: 'BFQPS', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_brute_force_qps")}
                 ]
             });
 
