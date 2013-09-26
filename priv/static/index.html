@@ -28,6 +28,8 @@
 
     <div id="response-time-percentiles"></div>
     <div id="queries-per-second"></div>
+    <div id="true-queries-per-second"></div>
+    <div id="true-queries-per-minute"></div>
 
     <div id="history-container"></div>
 </div>
@@ -259,6 +261,47 @@
                     { name: 'QPS', type: 'spline', data: [], mapper: Habanero.qpsMapper}
                 ]
             });
+
+            Habanero.addChart({
+                title: { text: "True Queries Per Second" },
+                chart: { renderTo: 'true-queries-per-second', zoomType: 'xy' },
+                xAxis: { type: 'datetime', dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S'
+                }, showLastLabel: true },
+                yAxis: [
+                    { title: { text: 'TQPS' }, min: 0 },
+                    { title: { text: 'Workers' }, opposite: true, min: 0}
+                ],
+                plotOptions: {
+                    area: { marker: { enabled: false } },
+                    spline: { marker: { enabled: false } }
+                },
+                series: [
+                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
+                    { name: 'TQPS', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_qps.n")}
+                ]
+            });
+
+            Habanero.addChart({
+                title: { text: "True Queries Per Minute" },
+                chart: { renderTo: 'true-queries-per-minute', zoomType: 'xy' },
+                xAxis: { type: 'datetime', dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S'
+                }, showLastLabel: true },
+                yAxis: [
+                    { title: { text: 'TQPM' }, min: 0 },
+                    { title: { text: 'Workers' }, opposite: true, min: 0}
+                ],
+                plotOptions: {
+                    area: { marker: { enabled: false } },
+                    spline: { marker: { enabled: false } }
+                },
+                series: [
+                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
+                    { name: 'TQPM', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_qpm.one")}
+                ]
+            });
+
         }
     });
 

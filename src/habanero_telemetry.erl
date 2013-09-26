@@ -63,7 +63,7 @@ metrics([{Name, [{type, meter_reader}]}|Rest], A) ->
 metrics([{Name, [{type, duration}]}|Rest], A) ->
     metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]);
 metrics([{Name, [{type, spiral}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]).
+    metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]).
 
 
 %% @doc Filters histogram statistics to convert 'percentile and 'histogram'

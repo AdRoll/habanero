@@ -50,7 +50,15 @@ start_link(Pipeline) ->
         pipeline = Pipeline,
         current_stage = stage_id(hd(Pipeline))
     },
+
+    % we keep a global spiral tracking overall requests per minute
+    folsom_metrics:new_spiral(global_qpm),
+
+    % similarly keep a global sliding histogram tracking overall qps
+    folsom_metrics:new_histogram(global_qps, slide, 1),
+
     initialize_histograms(State),
+
     {ok, erlang:spawn_link(?MODULE, loop, [State])}.
 
 %% @doc Stops the given worker process.
@@ -92,6 +100,10 @@ loop(wait, #state{current_stage = Stage} = State) ->
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State0, body, <<"">>)))
     end;
 loop(transition, State) ->
+    % record the global request count stats
+    folsom_metrics:notify({global_qpm, 1}),
+    folsom_metrics:notify({global_qps, 1}),
+
     % Get next stage
     NextStage = to_atom(transition(State)),
     % Update telemetry data
