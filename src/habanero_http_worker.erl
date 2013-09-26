@@ -59,7 +59,7 @@ start_link(Pipeline) ->
     folsom_metrics:new_spiral(global_qpm),
 
     % similarly keep a global sliding histogram tracking overall qps
-    folsom_metrics:new_histogram(global_qps, slide, 1),
+    folsom_metrics:new_histogram(global_qps, slide, 10),
 
     % and we'll also try measuring qps ourselves
     folsom_metrics:new_histogram(global_brute_force_qps, slide, 10),

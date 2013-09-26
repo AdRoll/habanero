@@ -27,9 +27,9 @@
     </div>
 
     <div id="response-time-percentiles"></div>
-    <div id="queries-per-second"></div>
-    <div id="true-queries-per-second"></div>
     <div id="brute-force-queries-per-second"></div>
+    <div id="true-queries-per-second"></div>
+    <div id="queries-per-second-ceiling"></div>
     <div id="true-queries-per-minute"></div>
 
     <div id="history-container"></div>
@@ -172,7 +172,7 @@
             }
         },
 
-        qpsMapper: function (data) {
+        qpsCeilMapper: function (data) {
             var qps = 0;
             try {
                 var queriesPerWorkerPerSecond = Math.pow(10, 3) / Habanero.getProperty("snapshot.global_wait.arithmetic_mean", data);
@@ -187,6 +187,19 @@
                 qps = 0;
             } else if (!isFinite(qps)) {
                 qps = 0;
+            }
+
+            return [Habanero.getTime(data), qps];
+        },
+
+        trueQpsMapper: function (data) {
+            var qps = 0;
+
+            try {
+                qps = Math.round(Habanero.getProperty("snapshot.global_qps.n", data) / 10);
+            }
+            catch (e) {
+                console.log(e);
             }
 
             return [Habanero.getTime(data), qps];
@@ -258,13 +271,13 @@
             });
 
             Habanero.addChart({
-                title: { text: "Queries Per Second" },
-                chart: { renderTo: 'queries-per-second', zoomType: 'xy' },
+                title: { text: "Theoretical Queries Per Second Ceiling" },
+                chart: { renderTo: 'queries-per-second-ceiling', zoomType: 'xy' },
                 xAxis: { type: 'datetime', dateTimeLabelFormats: {
                     millisecond: '%H:%M:%S'
                 }, showLastLabel: true },
                 yAxis: [
-                    { title: { text: 'QPS' }, min: 0 },
+                    { title: { text: 'QPSC' }, min: 0 },
                     { title: { text: 'Workers' }, opposite: true, min: 0}
                 ],
                 plotOptions: {
@@ -273,7 +286,7 @@
                 },
                 series: [
                     { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
-                    { name: 'QPS', type: 'spline', data: [], mapper: Habanero.qpsMapper}
+                    { name: 'QPSC', type: 'spline', data: [], mapper: Habanero.qpsCeilMapper}
                 ]
             });
 
@@ -313,7 +326,7 @@
                 },
                 series: [
                     { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
-                    { name: 'TQPS', type: 'spline', data: [], mapper: Habanero.propertyMapper("snapshot.global_qps.n")}
+                    { name: 'TQPS', type: 'spline', data: [], mapper: Habanero.trueQpsMapper}
                 ]
             });
 
