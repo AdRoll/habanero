@@ -23,10 +23,7 @@
     pipeline :: pipeline(),
     current_stage :: stage_definition(),
     timestamps = #timestamps{} :: #timestamps{},
-    context = [] :: [{atom, list()}],
-
-    query_count = 0,
-    last_qps_measure
+    context = [] :: [{atom, list()}]
 }).
 
 % Lifecycle events
@@ -51,8 +48,7 @@ start_link([]) ->
 start_link(Pipeline) ->
     State = #state{
         pipeline = Pipeline,
-        current_stage = stage_id(hd(Pipeline)),
-        last_qps_measure = pytime()
+        current_stage = stage_id(hd(Pipeline))
     },
 
     % we keep a global spiral tracking overall requests per minute
@@ -60,9 +56,6 @@ start_link(Pipeline) ->
 
     % similarly keep a global sliding histogram tracking overall qps
     folsom_metrics:new_histogram(global_qps, slide, 10),
-
-    % and we'll also try measuring qps ourselves
-    folsom_metrics:new_histogram(global_brute_force_qps, slide, 10),
 
     initialize_histograms(State),
 
@@ -106,32 +99,16 @@ loop(wait, #state{current_stage = Stage} = State) ->
             State0 = timestamp(?EVT_RECEIVED_HEADERS, context_store(State, headers, [])),
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State0, body, <<"">>)))
     end;
-loop(transition, State = #state{query_count=QC, last_qps_measure=LastQPSMeasure}) ->
+loop(transition, State) ->
     % record the global request count stats
     folsom_metrics:notify({global_qpm, 1}),
     folsom_metrics:notify({global_qps, 1}),
 
-    % periodically measure brute force qps
-    Now = pytime(),
-    State1 = case Now - LastQPSMeasure of
-                 QPSWindow when QPSWindow >= 1 ->
-                     BruteForceQPS = trunc(QC+1 / QPSWindow),
-                     folsom_metrics:notify({global_brute_force_qps, BruteForceQPS}),
-                     State#state{
-                         query_count = 0,
-                         last_qps_measure = Now
-                     };
-                 _ ->
-                     State#state{
-                         query_count = QC+1
-                     }
-             end,
-
     % Get next stage
-    NextStage = to_atom(transition(State1)),
+    NextStage = to_atom(transition(State)),
 
     % Update telemetry data
-    State2 = notify_async(?INTERVALS, timestamp(?EVT_LOOP_END, State1)),
+    State2 = notify_async(?INTERVALS, timestamp(?EVT_LOOP_END, State)),
     State3 = State2#state{
         current_stage = NextStage,
         timestamps = #timestamps{}

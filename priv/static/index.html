@@ -205,20 +205,6 @@
             return [Habanero.getTime(data), qps];
         },
 
-        bruteForceQpsMapper: function (data) {
-            var qps = 0;
-
-            try {
-                qps = Math.round(Habanero.getProperty("snapshot.global_brute_force_qps.n", data) * Habanero.getProperty("snapshot.global_brute_force_qps.arithmetic_mean", data) / 10);
-                console.log("Brute force qps = " + qps);
-            }
-            catch (e) {
-                console.log(e);
-            }
-
-            return [Habanero.getTime(data), qps];
-        },
-
         propertyMapper: function (property) {
             return function (data) {
                 return [Habanero.getTime(data), Habanero.getProperty(property, data)];
@@ -287,26 +273,6 @@
                 series: [
                     { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
                     { name: 'QPSC', type: 'spline', data: [], mapper: Habanero.qpsCeilMapper}
-                ]
-            });
-
-            Habanero.addChart({
-                title: { text: "Brute Force Queries Per Second" },
-                chart: { renderTo: 'brute-force-queries-per-second', zoomType: 'xy' },
-                xAxis: { type: 'datetime', dateTimeLabelFormats: {
-                    millisecond: '%H:%M:%S'
-                }, showLastLabel: true },
-                yAxis: [
-                    { title: { text: 'BFQPS' }, min: 0 },
-                    { title: { text: 'Workers' }, opposite: true, min: 0}
-                ],
-                plotOptions: {
-                    area: { marker: { enabled: false } },
-                    spline: { marker: { enabled: false } }
-                },
-                series: [
-                    { name: 'Count', type: 'area', yAxis: 1, dashStyle: 'dash', fillOpacity: 0.1, data: [], mapper: Habanero.propertyMapper("snapshot.worker_count")},
-                    { name: 'BFQPS', type: 'spline', data: [], mapper: Habanero.bruteForceQpsMapper}
                 ]
             });
 
