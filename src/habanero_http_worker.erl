@@ -161,6 +161,22 @@ call(undefined, _State) ->
     undefined;
 call({return, Value}, _State) ->
     Value;
+call({javascript, Function}, #state{}) ->
+    {_, Result} = case js_driver:new() of
+                      {ok, JS} ->
+                          Javascript = iolist_to_binary([<<"var habaneroFun = ">>|Function]),
+                          case js:define(JS, Javascript) of
+                              ok ->
+                                  js:call(JS, <<"habaneroFun">>, []);
+                              _ ->
+                                  lager:error("Javascript error"),
+                                  {error, undefined}
+                          end;
+                      _ ->
+                          lager:error("Javascript error"),
+                          {error, undefined}
+                  end,
+    Result;
 call({erlang, {Module, Function}}, #state{context = C} = _State) ->
     Module:Function(C).
 

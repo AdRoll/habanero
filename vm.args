@@ -1,14 +1,8 @@
 -boot start_sasl
 
--s reloader
-
--s inets
-
--s ssl
-
 -s habanero
 
 +K true
 
-#+Q 65536
++Q 65536
 -env ERL_MAX_PORTS 655360
