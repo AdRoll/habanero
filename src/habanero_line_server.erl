@@ -35,7 +35,7 @@
 -type path_list() :: list(string()).
 -type line_server_definition() :: list({atom, path_list()}).
 
--spec start_link(line_server_definition()) -> ok.
+-spec start_link(line_server_definition()) -> ok | ignore | {error, _} | {ok, pid()}.
 start_link(Args) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Args, []).
 
@@ -109,7 +109,7 @@ for_each_line_in_file(Name, Proc, Mode, Accum0) ->
 %% @private
 for_each_line(Device, Proc, Accum) ->
     case io:get_line(Device, "") of
-        eof -> file:close(Device), Accum;
+        eof -> ok = file:close(Device), Accum;
         Line -> NewAccum = Proc(Line, Accum),
             for_each_line(Device, Proc, NewAccum)
     end.

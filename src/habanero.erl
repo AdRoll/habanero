@@ -4,14 +4,23 @@
 -export([start/0, stop/0]).
 
 start() ->
-    habanero_deps:ensure(),
-    application:start(lager),
-    application:start(folsom),
-    application:start(ranch),
-    application:start(cowboy),
-    application:start(erlang_js),
-    application:start(habanero).
+    ok = habanero_deps:ensure(),
+    ok = ensure_started(habanero).
 
 stop() ->
-    application:stop(habanero).
+    ok = application:stop(habanero).
 
+%%%===================================================================
+%%% Internal Functions
+%%%===================================================================
+
+ensure_started(App) ->
+    case application:start(App) of
+        ok ->
+            ok;
+        {error, {not_started, DepApp}} ->
+            ensure_started(DepApp),
+            ensure_started(App);
+        {error, {already_started, App}} ->
+            ok
+    end.

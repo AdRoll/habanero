@@ -48,23 +48,22 @@ stages() ->
 %% @private
 metrics([], A) ->
     A;
-metrics([{Name, [{type, counter}]}|Rest], A) ->
+metrics([{Name, [{type, counter}, {tags, _}]}|Rest], A) ->
     metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]);
-metrics([{Name, [{type, gauge}]}|Rest], A) ->
+metrics([{Name, [{type, gauge}, {tags, _}]}|Rest], A) ->
     metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]);
-metrics([{Name, [{type, histogram}]}|Rest], A) ->
+metrics([{Name, [{type, histogram}, {tags, _}]}|Rest], A) ->
     metrics(Rest, [{Name, filter(folsom_metrics:get_histogram_statistics(Name), [])}|A]);
-metrics([{Name, [{type, history}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_history_values(Name)}|A]);
-metrics([{Name, [{type, meter}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]);
-metrics([{Name, [{type, meter_reader}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]);
-metrics([{Name, [{type, duration}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]);
-metrics([{Name, [{type, spiral}]}|Rest], A) ->
-    metrics(Rest, [{Name, folsom_metrics:get_values(Name)}|A]).
-
+metrics([{Name, [{type, history}, {tags, _}]}|Rest], A) ->
+    metrics(Rest, [{Name, folsom_metrics:get_history_values(Name, 1024)}|A]);
+metrics([{Name, [{type, meter}, {tags, _}]}|Rest], A) ->
+    metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]);
+metrics([{Name, [{type, meter_reader}, {tags, _}]}|Rest], A) ->
+    metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]);
+metrics([{Name, [{type, duration}, {tags, _}]}|Rest], A) ->
+    metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]);
+metrics([{Name, [{type, spiral}, {tags, _}]}|Rest], A) ->
+    metrics(Rest, [{Name, folsom_metrics:get_metric_value(Name)}|A]).
 
 %% @doc Filters histogram statistics to convert 'percentile and 'histogram'
 %% metrics into JSON-able formats.
@@ -92,7 +91,7 @@ get_filename(Now) ->
 
 %% @private
 make_dirs(Path) ->
-    make_dirs(filename:split(Path), []).
+    ok = make_dirs(filename:split(Path), []).
 
 %% @private
 make_dirs([], _) ->
@@ -120,8 +119,3 @@ stage_ids([], A) ->
     lists:reverse(A);
 stage_ids([{StageId, _}|Rest], A) ->
     stage_ids(Rest, [StageId|A]).
-
-%% @doc TODO
-connection_count() ->
-    {http_connection_count, httpc:info()},
-    ok.
