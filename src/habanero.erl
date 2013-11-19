@@ -5,13 +5,12 @@
 
 start() ->
     habanero_deps:ensure(),
-    application:start(lager),
-    application:start(folsom),
-    application:start(ranch),
-    application:start(cowboy),
-    application:start(erlang_js),
-    application:start(habanero).
+    _ = application:start(lager),
+    _ = application:start(folsom),
+    _ = application:start(ranch),
+    _ = application:start(cowboy),
+    _ = application:start(erlang_js),
+    _ = application:start(habanero).
 
 stop() ->
-    application:stop(habanero).
-
+    _ = application:stop(habanero).

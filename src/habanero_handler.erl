@@ -34,19 +34,11 @@ dispatch({<<"stop">>, R}) ->
     habanero_coordinator:stop_run(),
     ok(R);
 dispatch({<<"history">>, R}) ->
-    case history() of
-        {ok, JSON} ->
-            json(R, JSON);
-        {error, Reason} ->
-            err(R, Reason)
-    end;
+    {ok, JSON} = history(),
+    json(R, JSON);
 dispatch({<<"load">>, R}) ->
-    case load(cowboy_req:qs_val(<<"id">>, R)) of
-        {ok, JSON} ->
-            json(R, JSON);
-        {error, Reason} ->
-            err(R, Reason)
-    end ;
+    {ok, JSON} = load(cowboy_req:qs_val(<<"id">>, R)),
+    json(R, JSON);
 dispatch({<<"status">>, R}) ->
     echo(R, habanero_coordinator:status());
 dispatch({_, R}) ->
@@ -55,29 +47,29 @@ dispatch({_, R}) ->
 ok(R) ->
     cowboy_req:reply(200, [{<<"content-type">>, <<"text/plain">>}], "ok", R).
 
-echo(R, Msg) when is_atom(Msg) ->
-    echo(R, erlang:atom_to_list(Msg));
+echo(R, [true]) ->
+    echo(R, <<"true">>);
+echo(R, [false]) ->
+    echo(R, <<"false">>);
 echo(R, Msg) ->
     cowboy_req:reply(200, [{<<"content-type">>, <<"text/plain">>}], Msg, R).
 
 json(R, Json) ->
     cowboy_req:reply(200, [{<<"content-type">>, <<"application/json">>}], Json, R).
 
-err(R, Reason) ->
-    cowboy_req:reply(500, [{<<"content-type">>, <<"text/plain">>}], Reason, R).
-
-
 %% @doc Return history metadata for all past runs.
 history() ->
     Path = habanero_telemetry:base_path(),
-    case file:list_dir(Path) of
-        {ok, FileNames} ->
-            {ok, mochijson2:encode({struct, [
-                {<<"history">>, history(Path, sorted(cleaned(FileNames)), [])}
-            ]})};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    FileNames = case file:list_dir(Path) of
+                    {ok, Fs} -> Fs;
+                    _ -> []
+                end,
+    History = history(Path, sorted(cleaned(FileNames)), []),
+    {ok, mochijson2:encode({struct, [
+                                     {<<"history">>, History}
+                                    ]
+                           })
+    }.
 
 %% @doc Return history metadata for the given Path and Filenames.
 history(_Path, [], A) ->
@@ -92,7 +84,7 @@ history(Path, [Filename|Rest], A) ->
                 {<<"target">>, <<"">>}]},
             history(Path, Rest, [JSON|A]);
         {error, Reason} ->
-            lager:error("History error ~p, skipping ~p", [Reason, Filename]),
+            ok = lager:error("History error ~p, skipping ~p", [Reason, Filename]),
             history(Path, Rest, A)
     end.
 
@@ -134,12 +126,6 @@ load(Path, [Filename|Rest], A) ->
         {ok, Contents} ->
             load(Path, Rest, [mochijson2:decode(Contents)|A]);
         {error, Reason} ->
-            lager:error("Load error ~p, skipping ~p", [Reason, File]),
+            ok = lager:error("Load error ~p, skipping ~p", [Reason, File]),
             load(Path, Rest, A)
     end.
-
-timestamp(Filename) ->
-    hd(binary:split(iolist_to_binary(Filename), <<".">>)).
-
-
-

@@ -66,27 +66,27 @@ loop(State) ->
 loop(compose_request, State) ->
     Request = compose_request(State),
     case send_request(Request) of
-        {ok, RequestId} ->
+        {ok, _RequestId} ->
             loop(wait,
                 timestamp(?EVT_REQUEST_COMPOSED,
                     context_store(State, request, Request)));
         {error, Reason} ->
-            lager:error("Request error: ~p", [Reason]),
+            ok = lager:error("Request error: ~p", [Reason]),
             {error, Reason}
     end;
-loop(wait, #state{current_stage = Stage} = State) ->
+loop(wait, #state{current_stage = _Stage} = State) ->
     receive
-        {http, {RequestId, stream_start, Headers}} ->
+        {http, {_RequestId, stream_start, _Headers}} ->
             loop(wait, timestamp(?EVT_RECEIVED_HEADERS, context_store(State, body, [])));
-        {http, {RequestId, stream, Body}} ->
+        {http, {_RequestId, stream, Body}} ->
             loop(wait, context_store(State, body, [context_value(State, body)|Body]));
-        {http, {RequestId, stream_end, Headers}} ->
+        {http, {_RequestId, stream_end, Headers}} ->
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State, headers, Headers)));
-        {http, {RequestId, {Status, Headers, Body}}} ->
+        {http, {_RequestId, {_Status, Headers, Body}}} ->
             % Received headers and body in one go, typically a redirect.
             State0 = timestamp(?EVT_RECEIVED_HEADERS, context_store(State, headers, Headers)),
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State0, body, Body)));
-        Message ->
+        _Message ->
             % Mystery message, clear stored headers & body and continue
             State0 = timestamp(?EVT_RECEIVED_HEADERS, context_store(State, headers, [])),
             loop(transition, timestamp(?EVT_RECEIVED_BODY, context_store(State0, body, <<"">>)))
@@ -161,25 +161,8 @@ call(undefined, _State) ->
     undefined;
 call({return, Value}, _State) ->
     Value;
-call({erlang, {Module, Function}}, #state{context = C} = State) ->
-    Module:Function(C);
-call({javascript, Function}, #state{context = C} = State) ->
-    {_, Result} = case js_driver:new() of
-                      {ok, JS} ->
-                          Javascript = iolist_to_binary([<<"var habaneroFun = ">>|Function]),
-                          case js:define(JS, Javascript) of
-                              ok ->
-                                  js:call(JS, <<"habaneroFun">>, []);
-                              _ ->
-                                  lager:error("Javascript error"),
-                                  {error, undefined}
-                          end;
-                      _ ->
-                          lager:error("Javascript error"),
-                          {error, undefined}
-                  end,
-    Result.
-
+call({erlang, {Module, Function}}, #state{context = C} = _State) ->
+    Module:Function(C).
 
 %% @doc Updates the telemetry metrics asynchronously.
 notify_async(Intervals, State) ->
@@ -195,8 +178,8 @@ notify([], _State) ->
     ok;
 notify([Interval|Rest], #state{timestamps = Timestamps, current_stage = StageId} = State) ->
     Value = trunc(get_interval_value(Interval, Timestamps) / 1.0e3),
-    folsom_metrics:notify({metric_name({global, Interval}), Value}),
-    folsom_metrics:notify({metric_name({StageId, Interval}), Value}),
+    _ = folsom_metrics:notify({metric_name({global, Interval}), Value}),
+    _ = folsom_metrics:notify({metric_name({StageId, Interval}), Value}),
     notify(Rest, State).
 
 %% @doc Record the timestamp of a given event.
@@ -228,7 +211,7 @@ initialize_histograms(#state{} = State) ->
 initialize_histograms([]) ->
     ok;
 initialize_histograms([Name|Rest]) ->
-    folsom_metrics:new_histogram(Name, exdec),
+    _ = folsom_metrics:new_histogram(Name, exdec),
     initialize_histograms(Rest).
 
 metric_name({Stage, Interval}) ->
@@ -238,5 +221,5 @@ context_store(#state{context = C0, current_stage = CurrentStage} = State, Key, V
     C1 = lists:keystore(Key, 1, proplists:get_value(CurrentStage, C0, []), {Key, Value}),
     State#state{context = lists:keystore(CurrentStage, 1, C0, {CurrentStage, C1})}.
 
-context_value(#state{context = C0, current_stage = CurrentStage} = State, Key) ->
+context_value(#state{context = C0, current_stage = CurrentStage} = _State, Key) ->
     proplists:get_value(Key, proplists:get_value(CurrentStage, C0, [])).

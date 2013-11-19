@@ -60,7 +60,7 @@ status() ->
 
 init(Args) ->
     process_flag(trap_exit, true),
-    reset_metrics(),
+    _ = reset_metrics(),
     {ok, #state{
         pipeline = proplists:get_value(pipeline, Args, []),
         timeline = proplists:get_value(timeline, Args)
@@ -88,10 +88,10 @@ handle_cast({start_run}, #state{timeline = Timeline} = State) ->
         [explode_timeline(Timeline), os:timestamp()]),
     {noreply, State#state{tref = TRef}};
 handle_cast({stop_run}, State) ->
-    case State of
-        #state{tref = undefined} -> ok;
-        #state{tref = TRef} -> timer:cancel(TRef)
-    end,
+    _ = case State of
+            #state{tref = undefined} -> ok;
+            #state{tref = TRef} -> timer:cancel(TRef)
+        end,
     {noreply, notify(rescale(State#state{tref = undefined}, 0))};
 handle_cast(_Request, State) ->
     {noreply, State}.
@@ -100,7 +100,7 @@ handle_cast(_Request, State) ->
 handle_info({workers, NumWorkers}, State) ->
     {noreply, notify(rescale(State, NumWorkers))};
 handle_info({'EXIT', Pid, Reason}, State) ->
-    lager:info("Worker ~p existed for reason ~p", [Pid, Reason]),
+    _ = lager:info("Worker ~p existed for reason ~p", [Pid, Reason]),
     {noreply, notify(remove_worker(State, Pid))};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -117,7 +117,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% @doc Spawns or terminates workers until the desired worker count is reached.
 rescale(#state{workers = Workers} = State, Goal) when length(Workers) =:= Goal, Goal =:= 0 ->
-    reset_metrics(),
+    _ = reset_metrics(),
     State;
 rescale(#state{workers = Workers} = State, Goal) when length(Workers) =:= Goal ->
     State;
@@ -130,10 +130,10 @@ rescale(#state{workers = Workers} = State, Goal) when length(Workers) > Goal ->
 spawn_worker(#state{workers = Workers, pipeline = Pipeline} = State) ->
     case habanero_http_worker:start_link(Pipeline) of
         {ok, Pid} ->
-            lager:info("Spawned worker ~p", [Pid]),
+            _ = lager:info("Spawned worker ~p", [Pid]),
             State#state{workers = [Pid|Workers]};
         {error, Error} ->
-            lager:error("Error spawning worker ~p", [Error]),
+            _ = lager:error("Error spawning worker ~p", [Error]),
             State
     end.
 
@@ -148,7 +148,7 @@ remove_worker(#state{workers = Workers} = State, Pid) ->
 
 %% @doc Updates the <em>worker_count</em>
 notify(#state{workers = Workers} = State) ->
-    folsom_metrics:notify({worker_count, erlang:length(Workers)}),
+    ok = folsom_metrics:notify({worker_count, erlang:length(Workers)}),
     State.
 
 %% @doc Executes a load test timeline.
@@ -159,7 +159,7 @@ notify(#state{workers = Workers} = State) ->
 -spec execute_timeline(list(pos_integer()), erlang:timestamp()) -> ok.
 execute_timeline(Timeline, StartTs) ->
     % Take a snapshot of the current telemetry data.
-    habanero_telemetry:save_to_disk(?SECONDS(StartTs)),
+    ok = habanero_telemetry:save_to_disk(?SECONDS(StartTs)),
 
     N = erlang:min(trunc(timer:now_diff(os:timestamp(), StartTs) / 1.0e6), erlang:length(Timeline)),
 
