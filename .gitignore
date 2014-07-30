@@ -1,3 +1,6 @@
+*.*~
+*~
+*.dump
 .eunit
 deps/
 ebin/
