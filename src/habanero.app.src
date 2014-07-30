@@ -2,7 +2,7 @@
 {application, habanero,
     [
         {description, "A light weight loadtesting framework."},
-        {vsn, git},
+        {vsn, "semver"},
         {registered, []},
         {applications, [
             kernel,
