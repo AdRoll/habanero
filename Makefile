@@ -20,6 +20,6 @@ quick_compile:
 	@$(REBAR) compile skip_deps=true
 
 rel: clean compile
-	rm -rf ./rel/habanero && $(REBAR) generate -f
+	@cd rel && rm -rf habernero && ../rebar generate -f
 
 
