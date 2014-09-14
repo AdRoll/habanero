@@ -1,9 +1,11 @@
-.PHONY: rel
+.PHONY: rel deps
 
 REBAR=./rebar
 
-all:
-	@$(REBAR) get-deps compile
+all: deps compile
+
+deps:
+	@$(REBAR) get-deps 
 
 clean:
 	@$(REBAR) clean
@@ -11,11 +13,13 @@ clean:
 clean_all:
 	@$(REBAR) clean delete-deps
 
+compile:
+	@$(REBAR) compile
+
 quick_compile:
 	@$(REBAR) compile skip_deps=true
 
-rel: clean
-	rm -rf ./rel/habanero
-	@$(REBAR) compile generate force=1
+rel: clean compile
+	rm -rf ./rel/habanero && $(REBAR) generate -f
 
 
