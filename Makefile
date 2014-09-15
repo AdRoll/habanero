@@ -21,6 +21,7 @@ quick_compile:
 
 copy_data:
 	@cp -rf ./priv ./rel/files
+	@cp -f ./habanero.config ./rel/files/sys.config
 
 rel: clean compile copy_data
 	@rm -rf ./rel/habanero && cd rel && ../rebar generate -f
