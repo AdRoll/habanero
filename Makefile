@@ -23,6 +23,6 @@ copy_data:
 	@cp -rf ./priv ./rel/files
 
 rel: clean compile copy_data
-	@cd rel && rm -rf habernero && ../rebar generate -f
+	@rm -rf ./rel/habanero && cd rel && ../rebar generate -f
 
 
