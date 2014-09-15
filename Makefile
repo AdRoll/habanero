@@ -19,7 +19,10 @@ compile:
 quick_compile:
 	@$(REBAR) compile skip_deps=true
 
-rel: clean compile
+copy_data:
+	@cp -rf ./priv ./rel/files
+
+rel: clean compile copy_data
 	@cd rel && rm -rf habernero && ../rebar generate -f
 
 
