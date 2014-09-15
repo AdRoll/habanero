@@ -12,5 +12,6 @@ log/
 *.iml
 .DS_Store
 *.swp
+.rebar
 rel/habanero
 rel/files/priv
